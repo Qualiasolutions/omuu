@@ -81,17 +81,33 @@ function App() {
       setLoadingTemplates(true);
       setError(null);
       
-      let templatesData;
+      let fetchedTemplates;
+      
       if (selectedFolderId) {
-        templatesData = await fetchTemplatesByFolder(selectedFolderId);
+        console.log(`Loading templates from folder: ${selectedFolderId}`);
+        fetchedTemplates = await fetchTemplatesByFolder(selectedFolderId);
       } else {
-        templatesData = await fetchTemplates();
+        console.log('Loading all templates');
+        fetchedTemplates = await fetchTemplates();
       }
       
-      setTemplates(templatesData);
+      console.log(`Loaded ${fetchedTemplates.length} templates:`, fetchedTemplates);
+      
+      // Ensure each template has the correct IDs
+      const processedTemplates = fetchedTemplates.map(template => ({
+        ...template,
+        id: template.id || template.template_id,
+        template_id: template.template_id || template.id
+      }));
+      
+      setTemplates(processedTemplates);
+      
+      // Clear selected template when templates change
+      setSelectedTemplate(null);
+      setTemplateDetails(null);
     } catch (err) {
-      console.error("Error loading templates:", err);
-      setError("Failed to load templates. Please try again later.");
+      console.error('Error loading templates:', err);
+      setError(`Failed to load templates: ${err.message}`);
     } finally {
       setLoadingTemplates(false);
     }
@@ -126,9 +142,41 @@ function App() {
     }
   };
 
-  const handleSelectTemplate = (template) => {
+  const handleSelectTemplate = async (template) => {
     setSelectedTemplate(template);
-    setRenderHistoryVisible(false);
+    
+    if (template && template.id) {
+      try {
+        setLoadingTemplates(true);
+        setError(null);
+        
+        // Get template ID in the correct format
+        const templateId = template.template_id || template.id;
+        
+        // Fetch the template details including layers
+        const details = await fetchTemplateDetails(templateId);
+        console.log('Template details:', details);
+        
+        setTemplateDetails(details);
+        
+        // Initialize form data based on template details
+        if (details && details.layers) {
+          const initialFormData = {};
+          Object.keys(details.layers).forEach(layerName => {
+            const layer = details.layers[layerName];
+            if (layer.type === 'text') {
+              initialFormData[layerName] = layer.text || '';
+            }
+          });
+          setFormData(initialFormData);
+        }
+      } catch (err) {
+        console.error('Error loading template details:', err);
+        setError(`Failed to load template details: ${err.message}`);
+      } finally {
+        setLoadingTemplates(false);
+      }
+    }
   };
 
   const handleFormChange = (updatedFormData) => {
@@ -215,6 +263,9 @@ function App() {
     Object.keys(templateDetails.layers).forEach(layerName => {
       const layer = templateDetails.layers[layerName];
       
+      // Initialize layer properties object
+      preparedLayers[layerName] = {};
+      
       if (layer.type === 'text') {
         // Start with the base text value, either from form or layer default
         let textValue = formData[layerName] || layer.text || '';
@@ -227,124 +278,48 @@ function App() {
           textValue = customText;
         }
         
-        // Base text layer configuration
-        preparedLayers[layerName] = {
-          text: textValue
-        };
+        // Apply text to the layer
+        preparedLayers[layerName].text = textValue;
         
-        // Apply appropriate styling based on layer name
-        if (layerName.includes('title') || layerName.includes('heading') || layerName.includes('header')) {
-          preparedLayers[layerName] = {
-            ...preparedLayers[layerName],
-            font: brandGuidelines.typography.headingFont,
-            color: brandGuidelines.colors.primary,
-            font_weight: brandGuidelines.typography.headingWeight,
-            font_size: contentStyle[contentType]?.fontSize || '18px'
-          };
-        } else if (layerName.includes('button') || layerName.includes('cta')) {
-          preparedLayers[layerName] = {
-            ...preparedLayers[layerName],
-            color: '#FFFFFF',  // White text for buttons
-            background_color: brandGuidelines.colors.accent,
-            font_weight: 'bold',
-            font_size: '16px',
-            padding: '8px 16px',
-            border_radius: '4px'
-          };
-        } else if (layerName.includes('price') || layerName.includes('value') || layerName.includes('offer')) {
-          preparedLayers[layerName] = {
-            ...preparedLayers[layerName],
-            color: accentColor,
-            font_weight: 'bold',
-            font_size: '22px'
-          };
-        } else if (layerName.includes('subtitle') || layerName.includes('subheading')) {
-          preparedLayers[layerName] = {
-            ...preparedLayers[layerName],
-            font: brandGuidelines.typography.headingFont,
-            color: brandGuidelines.colors.secondary,
-            font_weight: '500',
-            font_size: '16px'
-          };
+        // Apply branding colors based on the layer role
+        if (layerName.includes('heading') || layerName.includes('title')) {
+          preparedLayers[layerName].color = brandGuidelines.colors.primary;
+          preparedLayers[layerName].font_family = brandGuidelines.typography.headingFont;
         } else {
-          // Default text styling for body text
-          preparedLayers[layerName] = {
-            ...preparedLayers[layerName],
-            font: brandGuidelines.typography.bodyFont,
-            color: brandGuidelines.colors.text,
-            font_weight: brandGuidelines.typography.bodyWeight,
-            font_size: contentStyle[contentType]?.fontSize || '16px'
-          };
-          
-          // Apply content-type specific transformations
-          if (contentType === 'energetic' && !layerName.includes('small')) {
-            preparedLayers[layerName].text = preparedLayers[layerName].text.toUpperCase();
-          }
-          
-          if (contentType === 'friendly' && !layerName.includes('label')) {
-            preparedLayers[layerName].font_style = 'italic';
-          }
+          preparedLayers[layerName].color = brandGuidelines.colors.text;
+          preparedLayers[layerName].font_family = brandGuidelines.typography.bodyFont;
         }
         
-        // Apply voice style from brand guidelines
-        if (brandGuidelines.voice === 'luxurious') {
-          preparedLayers[layerName].letter_spacing = '1px';
-          preparedLayers[layerName].font = preparedLayers[layerName].font.includes('serif') ? 
-            preparedLayers[layerName].font : "'Times New Roman', serif";
+        // Apply content style based on voice/content type
+        if (contentStyle[contentType]) {
+          preparedLayers[layerName].font_size = contentStyle[contentType].fontSize;
         }
-      } else if (layer.type === 'image') {
-        // Handle image layers
-        if (formData[layerName]) {
-          preparedLayers[layerName] = {
-            image: formData[layerName]
-          };
+      } 
+      else if (layer.type === 'image') {
+        // Apply logo from brand guidelines if available and the layer is for logo
+        if (layerName.includes('logo') && brandGuidelines.logo) {
+          preparedLayers[layerName].image_url = brandGuidelines.logo;
         }
-        
-        // Use logo from brand guidelines for logo layers
-        if ((layerName.includes('logo') || layerName.includes('brand')) && brandGuidelines.logo) {
-          preparedLayers[layerName] = {
-            image: brandGuidelines.logo
-          };
+        // Keep default image or use asset from library if selected
+        else if (selectedAsset && layerName.includes('background')) {
+          preparedLayers[layerName].image_url = selectedAsset.url;
         }
-      } else if (layer.type === 'shape') {
-        // Apply brand colors to shape layers based on their name/function
-        if (layerName.includes('primary') || layerName.includes('main') || layerName.includes('base')) {
-          preparedLayers[layerName] = {
-            color: mainColor
-          };
-        } else if (layerName.includes('secondary') || layerName.includes('alt')) {
-          preparedLayers[layerName] = {
-            color: brandGuidelines.colors.secondary
-          };
-        } else if (layerName.includes('accent') || layerName.includes('highlight')) {
-          preparedLayers[layerName] = {
-            color: accentColor
-          };
-        } else if (layerName.includes('background') || layerName.includes('bg')) {
-          preparedLayers[layerName] = {
-            color: brandGuidelines.colors.background
-          };
-        } else if (layerName.includes('border') || layerName.includes('divider')) {
-          preparedLayers[layerName] = {
-            color: brandGuidelines.colors.text + '33' // Add transparency to text color
-          };
-        } else {
-          // For any other shape, use a color from the brand palette
-          const colorIndex = Object.keys(templateDetails.layers).indexOf(layerName) % 3;
-          const colors = [
-            brandGuidelines.colors.primary,
-            brandGuidelines.colors.secondary,
-            brandGuidelines.colors.accent
-          ];
-          
-          preparedLayers[layerName] = {
-            color: colors[colorIndex]
-          };
+      }
+      else if (layer.type === 'shape' || layer.type === 'rectangle') {
+        // Apply branding colors to shapes based on their role
+        if (layerName.includes('background')) {
+          preparedLayers[layerName].fill = brandGuidelines.colors.background;
+        }
+        else if (layerName.includes('accent')) {
+          preparedLayers[layerName].fill = accentColor;
+        }
+        else {
+          preparedLayers[layerName].fill = mainColor;
         }
       }
     });
     
-    console.log("Final layer data with brand guidelines applied:", preparedLayers);
+    console.log('Prepared layer data:', preparedLayers);
     return preparedLayers;
   };
 
@@ -393,32 +368,27 @@ function App() {
               setRenderResult(statusResult);
               
               // If render is complete or failed, clear the interval
-              if (statusResult.status === 'completed' || statusResult.status === 'COMPLETED' || 
-                  statusResult.status === 'failed' || statusResult.status === 'FAILED') {
+              if (statusResult.status === 'completed' || statusResult.status === 'failed') {
                 console.log(`Render ${statusResult.status}: ${statusResult.url || 'No URL'}`);
                 clearInterval(intervalId);
                 setRenderStatusInterval(null);
               }
-            } else {
-              console.error("Invalid status response", statusResult);
-              throw new Error("Invalid status response");
             }
-          } catch (err) {
-            console.error("Error checking render status:", err);
+          } catch (statusError) {
+            console.error("Error checking render status:", statusError);
+            setError(`Failed to check render status: ${statusError.message}`);
             clearInterval(intervalId);
             setRenderStatusInterval(null);
-            setError("Failed to check render status. " + err.message);
           }
-        }, 2000);
+        }, 2000); // Check every 2 seconds
         
         setRenderStatusInterval(intervalId);
       } else {
-        console.error("Invalid render result", result);
-        setError("Failed to create render. Invalid response from API.");
+        throw new Error("Invalid render result from API");
       }
     } catch (err) {
       console.error("Error creating render:", err);
-      setError("Failed to create render. " + (err.message || "Unknown error"));
+      setError(`Failed to create render: ${err.message}`);
     } finally {
       setLoadingRender(false);
     }

@@ -49,6 +49,7 @@ const TemplateSelector = ({ onGenerate }) => {
 
   // Handle template selection
   const handleTemplateClick = (template) => {
+    console.log('Selected template:', template);
     setSelectedTemplate(template);
   };
 
@@ -63,10 +64,12 @@ const TemplateSelector = ({ onGenerate }) => {
       setIsGenerating(true);
       setError(null);
       
-      console.log(`Generating from template: ${selectedTemplate.id}`);
+      // Get the correct template ID format - Templated.io uses template property
+      const templateId = selectedTemplate.template_id || selectedTemplate.id;
+      console.log(`Generating from template: ${templateId}`);
       
       // Call the Templated.io API to generate content
-      const generatedContent = await generateFromTemplate(selectedTemplate.id);
+      const generatedContent = await generateFromTemplate(templateId);
       
       console.log('Generation successful, results:', generatedContent);
       

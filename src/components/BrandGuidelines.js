@@ -10,30 +10,51 @@ const BrandGuidelines = ({ brandGuidelines, onBrandGuidelinesChange }) => {
   const [error, setError] = useState('');
 
   const handleColorChange = (colorKey, value) => {
-    onBrandGuidelinesChange({
+    // Save to localStorage on every change
+    const updatedGuidelines = {
       ...brandGuidelines,
       colors: {
         ...brandGuidelines.colors,
         [colorKey]: value
       }
-    });
+    };
+    
+    // Save to localStorage
+    localStorage.setItem('omu-brand-guidelines', JSON.stringify(updatedGuidelines));
+    
+    // Notify parent component
+    onBrandGuidelinesChange(updatedGuidelines);
   };
 
   const handleTypographyChange = (typographyKey, value) => {
-    onBrandGuidelinesChange({
+    // Save to localStorage on every change
+    const updatedGuidelines = {
       ...brandGuidelines,
       typography: {
         ...brandGuidelines.typography,
         [typographyKey]: value
       }
-    });
+    };
+    
+    // Save to localStorage
+    localStorage.setItem('omu-brand-guidelines', JSON.stringify(updatedGuidelines));
+    
+    // Notify parent component
+    onBrandGuidelinesChange(updatedGuidelines);
   };
 
   const handleVoiceChange = (voice) => {
-    onBrandGuidelinesChange({
+    // Save to localStorage on every change
+    const updatedGuidelines = {
       ...brandGuidelines,
       voice: voice
-    });
+    };
+    
+    // Save to localStorage
+    localStorage.setItem('omu-brand-guidelines', JSON.stringify(updatedGuidelines));
+    
+    // Notify parent component
+    onBrandGuidelinesChange(updatedGuidelines);
   };
 
   const handleLogoUpload = async (event) => {

@@ -204,7 +204,7 @@ export const exportContent = async (contentId, format = 'pdf') => {
 };
 
 /**
- * Create a render using a template
+ * Create a render using a template and layer data
  * @param {string} templateId - ID of the template to use
  * @param {Object} layers - Layer data to apply to the template
  * @returns {Promise<Object>} Render result with ID
@@ -242,6 +242,18 @@ export const checkRenderStatus = async (renderId) => {
 
   const response = await templatedRequest(`/render/${renderId}`);
   console.log(`Render ${renderId} status:`, response);
+  
+  // Make sure to normalize status values from the API
+  if (response) {
+    if (response.status === 'COMPLETED') {
+      response.status = 'completed';
+    } else if (response.status === 'FAILED') {
+      response.status = 'failed';
+    } else if (response.status === 'PENDING') {
+      response.status = 'pending';
+    }
+  }
+  
   return response;
 };
 
@@ -255,20 +267,44 @@ export const fetchTemplateDetails = async (templateId) => {
     throw new Error('Template ID is required');
   }
 
-  // Use includeLayers parameter to get complete template structure
-  const queryParams = new URLSearchParams();
-  queryParams.append('includeLayers', 'true');
-  
-  const response = await templatedRequest(`/template/${templateId}?${queryParams.toString()}`);
-  
-  console.log(`Fetched details for template ${templateId}:`, response);
-  
-  // Ensure the response has a layers property, even if empty
-  if (!response.layers) {
-    response.layers = {};
+  try {
+    // Use includeLayers parameter to get complete template structure
+    const queryParams = new URLSearchParams();
+    queryParams.append('include_layers', 'true');
+    
+    const response = await templatedRequest(`/templates/${templateId}?${queryParams.toString()}`);
+    
+    console.log(`Fetched details for template ${templateId}:`, response);
+    
+    // Ensure the response has a layers property, even if empty
+    if (!response.layers) {
+      response.layers = {};
+    }
+    
+    return response;
+  } catch (error) {
+    console.error(`Error fetching template details for ${templateId}:`, error);
+    
+    // If we get a 404, try the alternative endpoint format
+    if (error.status === 404) {
+      try {
+        const altResponse = await templatedRequest(`/template/${templateId}`);
+        
+        console.log(`Fetched details using alternate endpoint for template ${templateId}:`, altResponse);
+        
+        if (!altResponse.layers) {
+          altResponse.layers = {};
+        }
+        
+        return altResponse;
+      } catch (altError) {
+        console.error(`Error with alternate endpoint for ${templateId}:`, altError);
+        throw altError;
+      }
+    }
+    
+    throw error;
   }
-  
-  return response;
 };
 
 /**
