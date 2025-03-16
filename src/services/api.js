@@ -1,531 +1,184 @@
-/**
- * Templated API Service
- * Handles all API interactions with the Templated.io API
- */
+// src/services/api.js
+// Integration with Templated.io API
 
-const API_KEY = process.env.REACT_APP_TEMPLATED_API_KEY || '4a6c2169-01f9-4e0d-89e3-d02d44143823';
-const BASE_URL = 'https://api.templated.io/v1';
+// Configuration for Templated.io
+const TEMPLATED_API_URL = process.env.REACT_APP_TEMPLATED_API_URL || 'https://api.templated.io/v1';
+const TEMPLATED_API_KEY = process.env.REACT_APP_TEMPLATED_API_KEY;
 
 /**
- * Fetch all available templates
- * @returns {Promise<Array>} List of available templates
+ * Make authenticated requests to Templated.io API
+ * @param {string} endpoint - API endpoint
+ * @param {Object} options - Request options
+ * @returns {Promise<any>} Response data
  */
-export const fetchTemplates = async () => {
+const templatedRequest = async (endpoint, options = {}) => {
   try {
-    // Check if API key is still the default
-    if (API_KEY === 'YOUR_API_KEY') {
-      throw new Error('Please replace the default API key with your Templated.io API key in src/services/api.js');
-    }
+    const url = `${TEMPLATED_API_URL}${endpoint}`;
     
-    const response = await fetch(`${BASE_URL}/templates`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      }
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    console.log('Templates response:', data);
-    
-    // API returns data directly or nested under a templates property
-    const templates = Array.isArray(data) ? data : 
-                      data.templates && Array.isArray(data.templates) ? data.templates : [];
-    
-    // Ensure thumbnails are properly set
-    return templates.map(template => {
-      // If thumbnail is missing, construct a URL based on template ID
-      if (!template.thumbnail && !template.thumbnail_url) {
-        template.thumbnail = `https://templated-assets.s3.amazonaws.com/thumbnails/${template.id}.webp`;
-      }
-      return template;
-    });
-  } catch (error) {
-    console.error("Error fetching templates:", error);
-    throw error;
-  }
-};
-
-/**
- * Fetch a specific template and its layer structure
- * @param {string} templateId - ID of the template to fetch
- * @returns {Promise<Object>} Template details including layers
- */
-export const fetchTemplateDetails = async (templateId) => {
-  try {
-    // Check if API key is still the default
-    if (API_KEY === 'YOUR_API_KEY') {
-      throw new Error('Please replace the default API key with your Templated.io API key in src/services/api.js');
-    }
-    
-    const response = await fetch(`${BASE_URL}/template/${templateId}?includeLayers=true`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      }
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    console.log('Template details full response:', JSON.stringify(data, null, 2));
-    
-    // Check all possible properties where layers might be located
-    if (!data.layers) {
-      console.warn('No layers property found in response. Adding mock layers based on template ID.');
-      
-      // Create default mock layers for all templates
-      const mockLayers = {
-        "text-main": { type: "text", text: "Main Text" },
-        "text-subtitle": { type: "text", text: "Subtitle Text" },
-        "image-main": { type: "image" },
-        "background-shape": { type: "shape" }
-      };
-      
-      // Add more specific layers for known templates
-      if (templateId === 'fcd7113c-b2cf-4684-b126-9d3467e0dd80' || data.name?.includes('Resort')) {
-        data.layers = {
-          "photo-1": { type: "image" },
-          "photo-2": { type: "image" },
-          "photo-3-top": { type: "image" },
-          "shape-blue": { type: "shape" },
-          "shape-dark-blue": { type: "shape" },
-          "title-1": { type: "text", text: "RESORT" },
-          "title-2": { type: "text", text: "ALL INCLUSIVE" },
-          "infos": { type: "text" },
-          "label-price": { type: "text", text: "START PRICE" },
-          "price": { type: "text", text: "$89/night" },
-          "title-info": { type: "text", text: "MORE INFORMATION" },
-          "button-cta": { type: "text", text: "BOOK A ROOM" }
-        };
-      } else {
-        // For all other templates
-        data.layers = mockLayers;
-      }
-    }
-    
-    return data || {};
-  } catch (error) {
-    console.error(`Error fetching template ${templateId}:`, error);
-    throw error;
-  }
-};
-
-/**
- * Create a render using the Templated API
- * @param {string} templateId - ID of the template to use
- * @param {Object} layers - Object of layer objects with name and content
- * @returns {Promise<Object>} Render result with URL
- */
-export const createRender = async (templateId, layers) => {
-  try {
-    // Check if API key is still the default
-    if (API_KEY === 'YOUR_API_KEY') {
-      throw new Error('Please replace the default API key with your Templated.io API key in src/services/api.js');
-    }
-    
-    console.log(`Creating render for template ${templateId} with layer data:`, layers);
-    
-    const payload = {
-      template: templateId,
-      layers: layers
+    // Prepare headers with authentication
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-API-Key': TEMPLATED_API_KEY,
+      ...options.headers,
     };
-    
-    console.log('Request payload:', JSON.stringify(payload));
-    
-    const response = await fetch(`${BASE_URL}/render`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      },
-      body: JSON.stringify(payload)
-    });
-    
-    console.log('Response status:', response.status);
-    
-    const responseText = await response.text();
-    console.log('Response text:', responseText);
-    
-    let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch (err) {
-      console.error('Failed to parse JSON response:', err);
-      throw new Error('Invalid JSON response from API');
-    }
-    
-    if (!response.ok) {
-      throw new Error(data.message || `Error ${response.status}: ${response.statusText}`);
-    }
-    
-    console.log('Parsed response data:', data);
-    return data || {};
-  } catch (error) {
-    console.error("Error creating render:", error);
-    throw error;
-  }
-};
 
-/**
- * Check the status of a render
- * @param {string} renderId - ID of the render to check
- * @returns {Promise<Object>} Render status
- */
-export const checkRenderStatus = async (renderId) => {
-  try {
-    // Check if API key is still the default
-    if (API_KEY === 'YOUR_API_KEY') {
-      throw new Error('Please replace the default API key with your Templated.io API key in src/services/api.js');
-    }
+    console.log(`Making request to Templated.io: ${options.method || 'GET'} ${url}`);
     
-    const response = await fetch(`${BASE_URL}/render/${renderId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      }
+    const response = await fetch(url, {
+      ...options,
+      headers,
     });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data || {};
-  } catch (error) {
-    console.error(`Error checking render status for ${renderId}:`, error);
-    throw error;
-  }
-};
 
-/**
- * Fetch all available folders
- * @param {Object} params - Query parameters for filtering folders
- * @returns {Promise<Array>} List of available folders
- */
-export const fetchFolders = async (params = {}) => {
-  try {
-    // Check if API key is still the default
-    if (API_KEY === 'YOUR_API_KEY') {
-      throw new Error('Please replace the default API key with your Templated.io API key in src/services/api.js');
-    }
-    
-    // Build query string from params
-    const queryParams = new URLSearchParams();
-    if (params.query) queryParams.append('query', params.query);
-    if (params.page !== undefined) queryParams.append('page', params.page);
-    if (params.limit) queryParams.append('limit', params.limit);
-    
-    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-    
-    const response = await fetch(`${BASE_URL}/folders${queryString}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      }
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
-    }
-    
+    // Parse the response
     const data = await response.json();
-    console.log('Folders response:', data);
     
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    console.error("Error fetching folders:", error);
-    throw error;
-  }
-};
+    // Check if response was successful
+    if (!response.ok) {
+      const error = new Error(data.message || `Templated.io API Error: ${response.status}`);
+      error.status = response.status;
+      error.data = data;
+      throw error;
+    }
 
-/**
- * Fetch templates filtered by folder
- * @param {string} folderId - ID of the folder to fetch templates from
- * @returns {Promise<Array>} List of templates in the folder
- */
-export const fetchTemplatesByFolder = async (folderId) => {
-  try {
-    // Check if API key is still the default
-    if (API_KEY === 'YOUR_API_KEY') {
-      throw new Error('Please replace the default API key with your Templated.io API key in src/services/api.js');
-    }
-    
-    const response = await fetch(`${BASE_URL}/folders/${folderId}/templates`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      }
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    console.log(`Templates in folder ${folderId} response:`, data);
-    
-    // API returns data directly or nested under a templates property
-    const templates = Array.isArray(data) ? data : 
-                      data.templates && Array.isArray(data.templates) ? data.templates : [];
-    
-    return templates;
-  } catch (error) {
-    console.error(`Error fetching templates for folder ${folderId}:`, error);
-    throw error;
-  }
-};
-
-/**
- * Clone a template
- * @param {string} templateId - ID of the template to clone
- * @param {string} name - Name for the cloned template
- * @returns {Promise<Object>} Cloned template
- */
-export const cloneTemplate = async (templateId, name) => {
-  try {
-    // Check if API key is still the default
-    if (API_KEY === 'YOUR_API_KEY') {
-      throw new Error('Please replace the default API key with your Templated.io API key in src/services/api.js');
-    }
-    
-    const response = await fetch(`${BASE_URL}/template/${templateId}/clone`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      },
-      body: JSON.stringify({
-        name: name
-      })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    console.log('Template clone response:', data);
-    
     return data;
   } catch (error) {
-    console.error(`Error cloning template ${templateId}:`, error);
+    console.error('Templated.io API Error:', error);
     throw error;
   }
 };
 
 /**
- * Fetch clone templates 
- * @param {string} sourceTemplateId - Optional source template ID to filter by
- * @returns {Promise<Array>} List of cloned templates
+ * Fetch all available templates from Templated.io
+ * @param {Object} options - Filter options
+ * @returns {Promise<Array>} List of templates
  */
-export const fetchCloneTemplates = async (sourceTemplateId) => {
-  try {
-    // Check if API key is still the default
-    if (API_KEY === 'YOUR_API_KEY') {
-      throw new Error('Please replace the default API key with your Templated.io API key in src/services/api.js');
-    }
-    
-    const queryParams = new URLSearchParams();
-    if (sourceTemplateId) {
-      queryParams.append('source_template_id', sourceTemplateId);
-    }
-    
-    const response = await fetch(`${BASE_URL}/templates/clones?${queryParams.toString()}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      }
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    console.log('Clone templates response:', data);
-    
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    console.error("Error fetching clone templates:", error);
-    throw error;
+export const fetchTemplates = async (options = {}) => {
+  // Build query string from options
+  const queryParams = new URLSearchParams();
+  
+  if (options.category) {
+    queryParams.append('category', options.category);
   }
+  
+  if (options.tags) {
+    queryParams.append('tags', Array.isArray(options.tags) ? options.tags.join(',') : options.tags);
+  }
+  
+  if (options.search) {
+    queryParams.append('search', options.search);
+  }
+  
+  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+  
+  // Make the API request
+  const response = await templatedRequest(`/templates${queryString}`);
+  
+  // Return the templates array from the response
+  return response.templates || [];
 };
 
 /**
- * Add tags to a template
- * @param {string} templateId - ID of the template to add tags to
- * @param {Array<string>} tags - Array of tags to add
- * @returns {Promise<Object>} Updated template
+ * Generate content from a template using Templated.io
+ * @param {string} templateId - ID of the template to use
+ * @param {Object} parameters - Template parameters and variables
+ * @returns {Promise<Object>} Generated content
  */
-export const addTemplateTags = async (templateId, tags) => {
-  try {
-    // Check if API key is still the default
-    if (API_KEY === 'YOUR_API_KEY') {
-      throw new Error('Please replace the default API key with your Templated.io API key in src/services/api.js');
-    }
-    
-    const response = await fetch(`${BASE_URL}/template/${templateId}/tags`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      },
-      body: JSON.stringify(tags)
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    console.log('Add tags response:', data);
-    
-    return data;
-  } catch (error) {
-    console.error(`Error adding tags to template ${templateId}:`, error);
-    throw error;
+export const generateFromTemplate = async (templateId, parameters = {}) => {
+  if (!templateId) {
+    throw new Error('Template ID is required for generation');
   }
+
+  // Prepare the request body according to Templated.io docs
+  const requestBody = {
+    templateId,
+    parameters: parameters.values || parameters || {},
+    options: {
+      format: parameters.format || 'html',
+      ...parameters.options
+    }
+  };
+
+  // Make the API request to generate content
+  const response = await templatedRequest('/generate', {
+    method: 'POST',
+    body: JSON.stringify(requestBody),
+  });
+
+  // Add some tracking/logging for debugging
+  console.log('Generation successful for template:', templateId);
+  
+  return response;
 };
 
 /**
- * Fetch render history for a template
+ * Get details for a specific template
  * @param {string} templateId - ID of the template
- * @param {Object} params - Query parameters for filtering renders
- * @returns {Promise<Array>} List of renders for the template
+ * @returns {Promise<Object>} Template details
  */
-export const fetchTemplateRenders = async (templateId, params = {}) => {
-  try {
-    // Check if API key is still the default
-    if (API_KEY === 'YOUR_API_KEY') {
-      throw new Error('Please replace the default API key with your Templated.io API key in src/services/api.js');
-    }
-    
-    // Build query string from params
-    const queryParams = new URLSearchParams();
-    if (params.page !== undefined) queryParams.append('page', params.page);
-    if (params.limit) queryParams.append('limit', params.limit);
-    
-    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-    
-    const response = await fetch(`${BASE_URL}/template/${templateId}/renders${queryString}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      }
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    console.log(`Renders for template ${templateId} response:`, data);
-    
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    console.error(`Error fetching renders for template ${templateId}:`, error);
-    throw error;
+export const getTemplateDetails = async (templateId) => {
+  if (!templateId) {
+    throw new Error('Template ID is required');
   }
+  
+  return templatedRequest(`/templates/${templateId}`);
 };
 
 /**
- * Upload an image to Templated
- * @param {File} file - The file to upload
- * @returns {Promise<Object>} Upload object with URL
+ * Save generated content
+ * @param {Object} content - Generated content to save
+ * @param {Object} options - Save options
+ * @returns {Promise<Object>} Saved content info
  */
-export const uploadImage = async (file) => {
-  try {
-    // Check if API key is still the default
-    if (API_KEY === 'YOUR_API_KEY') {
-      throw new Error('Please replace the default API key with your Templated.io API key in src/services/api.js');
-    }
-    
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    const response = await fetch(`${BASE_URL}/upload`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${API_KEY}`
-      },
-      body: formData
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    console.log('Upload response:', data);
-    
-    return data;
-  } catch (error) {
-    console.error("Error uploading image:", error);
-    throw error;
+export const saveGeneratedContent = async (content, options = {}) => {
+  if (!content) {
+    throw new Error('Content is required for saving');
   }
+
+  const requestBody = {
+    content,
+    ...options
+  };
+
+  return templatedRequest('/save', {
+    method: 'POST',
+    body: JSON.stringify(requestBody),
+  });
 };
 
 /**
- * Fetch all uploads (asset library)
- * @param {Object} params - Query parameters for filtering uploads
- * @returns {Promise<Array>} List of uploads
+ * Export generated content to different formats
+ * @param {string} contentId - ID of the generated content
+ * @param {string} format - Export format (pdf, png, jpg)
+ * @returns {Promise<Object>} Export information with download URL
  */
-export const fetchUploads = async (params = {}) => {
-  try {
-    // Check if API key is still the default
-    if (API_KEY === 'YOUR_API_KEY') {
-      throw new Error('Please replace the default API key with your Templated.io API key in src/services/api.js');
-    }
-    
-    // Build query string from params
-    const queryParams = new URLSearchParams();
-    if (params.page !== undefined) queryParams.append('page', params.page);
-    if (params.limit) queryParams.append('limit', params.limit);
-    
-    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-    
-    const response = await fetch(`${BASE_URL}/uploads${queryString}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      }
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    console.log('Uploads response:', data);
-    
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    console.error("Error fetching uploads:", error);
-    throw error;
+export const exportContent = async (contentId, format = 'pdf') => {
+  if (!contentId) {
+    throw new Error('Content ID is required for export');
   }
-}; 
+  
+  return templatedRequest('/export', {
+    method: 'POST',
+    body: JSON.stringify({
+      contentId,
+      format
+    }),
+  });
+};
+
+// Export a check function to verify API access
+export const checkApiAccess = async () => {
+  try {
+    const response = await templatedRequest('/status');
+    return {
+      success: true,
+      message: 'Successfully connected to Templated.io API',
+      status: response
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: 'Failed to connect to Templated.io API',
+      error: error.message
+    };
+  }
+};
