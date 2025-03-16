@@ -78,6 +78,44 @@ export const fetchTemplates = async (options = {}) => {
 };
 
 /**
+ * Fetch templates in a specific folder
+ * @param {string} folderId - ID of the folder to fetch templates from
+ * @param {Object} options - Additional options
+ * @returns {Promise<Array>} List of templates in the folder
+ */
+export const fetchTemplatesByFolder = async (folderId, options = {}) => {
+  if (!folderId) {
+    throw new Error('Folder ID is required');
+  }
+
+  // Build query string from options
+  const queryParams = new URLSearchParams();
+  
+  if (options.page) {
+    queryParams.append('page', options.page);
+  }
+  
+  if (options.limit) {
+    queryParams.append('limit', options.limit);
+  }
+  
+  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+  
+  try {
+    // Make the API request
+    const response = await templatedRequest(`/folders/${folderId}/templates${queryString}`);
+    
+    console.log(`Fetched templates for folder ${folderId}:`, response);
+    
+    // Return the templates array from the response
+    return response.templates || [];
+  } catch (error) {
+    console.error(`Error fetching templates for folder ${folderId}:`, error);
+    throw error;
+  }
+};
+
+/**
  * Generate content from a template using Templated.io
  * @param {string} templateId - ID of the template to use
  * @param {Object} parameters - Template parameters and variables
@@ -163,6 +201,89 @@ export const exportContent = async (contentId, format = 'pdf') => {
       format
     }),
   });
+};
+
+/**
+ * Create a render using a template
+ * @param {string} templateId - ID of the template to use
+ * @param {Object} layers - Layer data to apply to the template
+ * @returns {Promise<Object>} Render result with ID
+ */
+export const createRender = async (templateId, layers) => {
+  if (!templateId) {
+    throw new Error('Template ID is required for rendering');
+  }
+
+  try {
+    const requestBody = {
+      template: templateId,
+      layers: layers || {}
+    };
+
+    console.log('Creating render with data:', requestBody);
+
+    const response = await templatedRequest('/render', {
+      method: 'POST',
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log('Render creation successful:', response);
+    return response;
+  } catch (error) {
+    console.error('Error creating render:', error);
+    throw error;
+  }
+};
+
+/**
+ * Check the status of a render
+ * @param {string} renderId - ID of the render to check
+ * @returns {Promise<Object>} Render status and result URL if completed
+ */
+export const checkRenderStatus = async (renderId) => {
+  if (!renderId) {
+    throw new Error('Render ID is required to check status');
+  }
+
+  try {
+    const response = await templatedRequest(`/render/${renderId}`);
+    console.log(`Render ${renderId} status:`, response);
+    return response;
+  } catch (error) {
+    console.error(`Error checking render status for ${renderId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch detailed information about a specific template
+ * @param {string} templateId - ID of the template to fetch
+ * @returns {Promise<Object>} Template details with layers
+ */
+export const fetchTemplateDetails = async (templateId) => {
+  if (!templateId) {
+    throw new Error('Template ID is required');
+  }
+
+  try {
+    // Use includeLayers parameter to get complete template structure
+    const queryParams = new URLSearchParams();
+    queryParams.append('includeLayers', 'true');
+    
+    const response = await templatedRequest(`/templates/${templateId}?${queryParams.toString()}`);
+    
+    console.log(`Fetched details for template ${templateId}:`, response);
+    
+    // Ensure the response has a layers property, even if empty
+    if (!response.layers) {
+      response.layers = {};
+    }
+    
+    return response;
+  } catch (error) {
+    console.error(`Error fetching template details for ${templateId}:`, error);
+    throw error;
+  }
 };
 
 // Export a check function to verify API access
