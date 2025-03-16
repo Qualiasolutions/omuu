@@ -277,7 +277,8 @@ function App() {
               setRenderResult(statusResult);
               
               // If render is complete or failed, clear the interval
-              if (statusResult.status === 'completed' || statusResult.status === 'failed') {
+              if (statusResult.status === 'completed' || statusResult.status === 'COMPLETED' || 
+                  statusResult.status === 'failed' || statusResult.status === 'FAILED') {
                 console.log(`Render ${statusResult.status}: ${statusResult.url || 'No URL'}`);
                 clearInterval(intervalId);
                 setRenderStatusInterval(null);
@@ -373,7 +374,7 @@ function App() {
                 </div>
               </div>
               
-              {renderResult && renderResult.status === 'completed' && renderResult.url && (
+              {renderResult && (renderResult.status === 'completed' || renderResult.status === 'COMPLETED') && renderResult.url && (
                 <ResultDisplay 
                   renderUrl={renderResult.url}
                   onReset={() => {

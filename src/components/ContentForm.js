@@ -26,7 +26,12 @@ const ContentForm = ({
     <div className="omu-generator">
       <form className="omu-form" onSubmit={handleSubmit}>
         <div className="omu-form-group">
-          <label htmlFor="business-type">2. Select Business Type</label>
+          <label htmlFor="business-type">
+            <div className="omu-form-label">
+              <span className="omu-form-number">2</span>
+              <span>Select Business Type</span>
+            </div>
+          </label>
           <select
             id="business-type"
             value={businessType}
@@ -43,7 +48,12 @@ const ContentForm = ({
         </div>
 
         <div className="omu-form-group">
-          <label htmlFor="content-type">3. Select Content Style</label>
+          <label htmlFor="content-type">
+            <div className="omu-form-label">
+              <span className="omu-form-number">3</span>
+              <span>Select Content Style</span>
+            </div>
+          </label>
           <select
             id="content-type"
             value={contentType}
@@ -59,7 +69,12 @@ const ContentForm = ({
         </div>
 
         <div className="omu-form-group">
-          <label htmlFor="custom-text">4. Custom Text (Optional)</label>
+          <label htmlFor="custom-text">
+            <div className="omu-form-label">
+              <span className="omu-form-number">4</span>
+              <span>Custom Text (Optional)</span>
+            </div>
+          </label>
           <textarea
             id="custom-text"
             value={customText}
@@ -69,9 +84,11 @@ const ContentForm = ({
             className="omu-textarea"
             rows={4}
           />
-          <small className="omu-preview-text">
-            Preview: {previewText || "Your text will appear here"}
-          </small>
+          {previewText && (
+            <div className="omu-preview-text">
+              <strong>Preview:</strong> {previewText}
+            </div>
+          )}
         </div>
 
         <button 
@@ -85,13 +102,20 @@ const ContentForm = ({
               Generating...
             </>
           ) : (
-            'Generate Instagram Post'
+            <>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="omu-button-icon">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+              </svg>
+              Generate Instagram Post
+            </>
           )}
         </button>
       </form>
       
       {isGenerating && (
-        <div className="omu-generating-overlay">
+        <div className="omu-loading-overlay">
           <LoadingSpinner message="Creating your Instagram post..." />
         </div>
       )}
