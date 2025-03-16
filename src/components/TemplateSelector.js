@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { fetchTemplates } from '../services/api';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
@@ -56,27 +56,26 @@ const TemplateSelector = ({ templates, selectedTemplate, onTemplateSelect, isLoa
         </div>
       ) : (
         <>
-          {/* Templates grid - Make templates smaller and more responsive */}
+          {/* Templates grid - Smaller templates with proper classes */}
           {templates && templates.length > 0 ? (
-            <div className="templates-grid">
+            <div className="omu-templates-grid">
               {templates.map((template) => (
                 <div
                   key={template.id}
-                  className={`template-card ${selectedTemplate?.id === template.id ? 'ring-2 ring-primary border-primary' : ''}`}
+                  className={`omu-template-card ${selectedTemplate?.id === template.id ? 'selected' : ''}`}
                   onClick={() => handleTemplateClick(template)}
                 >
                   {template.thumbnail && (
-                    <div className="template-thumbnail">
+                    <div className="omu-template-card-image">
                       <img 
                         src={template.thumbnail} 
-                        alt={template.name} 
-                        className="w-100"
+                        alt={template.name}
                       />
                     </div>
                   )}
-                  <div className="p-2">
-                    <h3 className="template-title">{template.name}</h3>
-                    <p className="template-description">{template.description}</p>
+                  <div className="omu-template-info">
+                    <p>{template.name}</p>
+                    <small>{template.description}</small>
                   </div>
                 </div>
               ))}

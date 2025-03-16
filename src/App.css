@@ -131,7 +131,7 @@ body {
 
 .omu-templates-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 12px;
 }
 
@@ -144,6 +144,7 @@ body {
   height: 100%;
   display: flex;
   flex-direction: column;
+  max-width: 100%;
 }
 
 .omu-template-card:hover {
@@ -158,7 +159,8 @@ body {
 .omu-template-card-image {
   position: relative;
   overflow: hidden;
-  height: 150px;
+  height: 100px;
+  max-height: 120px;
 }
 
 .omu-template-card-image img {
