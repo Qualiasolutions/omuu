@@ -286,6 +286,97 @@ export const fetchTemplateDetails = async (templateId) => {
   }
 };
 
+/**
+ * Fetch uploaded assets/images from the API
+ * @param {Object} options - Pagination and filter options
+ * @returns {Promise<Array>} List of uploaded assets
+ */
+export const fetchUploads = async (options = {}) => {
+  // Build query string from options
+  const queryParams = new URLSearchParams();
+  
+  if (options.page) {
+    queryParams.append('page', options.page);
+  }
+  
+  if (options.limit) {
+    queryParams.append('limit', options.limit);
+  }
+  
+  if (options.type) {
+    queryParams.append('type', options.type);
+  }
+  
+  if (options.query) {
+    queryParams.append('query', options.query);
+  }
+  
+  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+  
+  try {
+    const response = await templatedRequest(`/uploads${queryString}`);
+    console.log('Fetched uploads:', response);
+    
+    // Return the uploads array from the response
+    return response.uploads || [];
+  } catch (error) {
+    console.error('Error fetching uploads:', error);
+    throw error;
+  }
+};
+
+/**
+ * Upload an image file to the API
+ * @param {File} file - The image file to upload
+ * @param {Object} options - Upload options
+ * @returns {Promise<Object>} Upload result with URL
+ */
+export const uploadImage = async (file, options = {}) => {
+  if (!file) {
+    throw new Error('File is required for upload');
+  }
+
+  try {
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Add any additional options as form fields
+    Object.keys(options).forEach(key => {
+      formData.append(key, options[key]);
+    });
+    
+    // Custom fetch for multipart/form-data instead of using templatedRequest
+    const url = `${TEMPLATED_API_URL}/upload`;
+    
+    console.log(`Uploading file ${file.name} to ${url}`);
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-API-Key': TEMPLATED_API_KEY,
+        // Do not set Content-Type here; browser will set it with boundary for FormData
+      },
+      body: formData
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      const error = new Error(data.message || `Upload Error: ${response.status}`);
+      error.status = response.status;
+      error.data = data;
+      throw error;
+    }
+    
+    console.log('File upload successful:', data);
+    return data;
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    throw error;
+  }
+};
+
 // Export a check function to verify API access
 export const checkApiAccess = async () => {
   try {
