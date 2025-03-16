@@ -433,3 +433,52 @@ export const checkApiAccess = async () => {
     };
   }
 };
+
+/**
+ * Fetch render history for a specific template
+ * @param {string} templateId - ID of the template (optional)
+ * @param {Object} options - Pagination and filter options
+ * @returns {Promise<Array>} List of render results
+ */
+export const fetchTemplateRenders = async (templateId, options = {}) => {
+  // Build query string from options
+  const queryParams = new URLSearchParams();
+  
+  if (templateId) {
+    queryParams.append('templateId', templateId);
+  }
+  
+  if (options.page) {
+    queryParams.append('page', options.page);
+  }
+  
+  if (options.limit) {
+    queryParams.append('limit', options.limit);
+  }
+  
+  if (options.status) {
+    queryParams.append('status', options.status);
+  }
+  
+  if (options.startDate) {
+    queryParams.append('startDate', options.startDate);
+  }
+  
+  if (options.endDate) {
+    queryParams.append('endDate', options.endDate);
+  }
+  
+  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+  
+  try {
+    // Since this is a render history endpoint, we'll use /renders
+    const response = await templatedRequest(`/renders${queryString}`);
+    console.log('Fetched render history:', response);
+    
+    // Return the renders array from the response
+    return response.renders || [];
+  } catch (error) {
+    console.error('Error fetching render history:', error);
+    throw error;
+  }
+};
