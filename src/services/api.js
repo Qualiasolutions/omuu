@@ -377,6 +377,45 @@ export const uploadImage = async (file, options = {}) => {
   }
 };
 
+/**
+ * Fetch folders/categories for organizing templates
+ * @param {Object} options - Query options for filtering folders
+ * @returns {Promise<Array>} List of folders
+ */
+export const fetchFolders = async (options = {}) => {
+  // Build query string from options
+  const queryParams = new URLSearchParams();
+  
+  if (options.page) {
+    queryParams.append('page', options.page);
+  }
+  
+  if (options.limit) {
+    queryParams.append('limit', options.limit);
+  }
+  
+  if (options.query) {
+    queryParams.append('query', options.query);
+  }
+  
+  if (options.parentId) {
+    queryParams.append('parentId', options.parentId);
+  }
+  
+  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+  
+  try {
+    const response = await templatedRequest(`/folders${queryString}`);
+    console.log('Fetched folders:', response);
+    
+    // Return the folders array from the response
+    return response.folders || [];
+  } catch (error) {
+    console.error('Error fetching folders:', error);
+    throw error;
+  }
+};
+
 // Export a check function to verify API access
 export const checkApiAccess = async () => {
   try {
