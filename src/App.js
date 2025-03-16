@@ -323,6 +323,24 @@ function App() {
     return preparedLayers;
   };
 
+  // Check render status
+  const checkRenderStatus = async () => {
+    if (renderResult && renderResult.id) {
+      try {
+        console.log(`Manual check for render ${renderResult.id}`);
+        const statusResult = await checkRenderStatus(renderResult.id);
+        console.log("Render status check result:", statusResult);
+        
+        if (statusResult && statusResult.url) {
+          console.log("Render URL found:", statusResult.url);
+          setRenderResult(statusResult);
+        }
+      } catch (error) {
+        console.error("Error checking render status:", error);
+      }
+    }
+  };
+
   const handleCreateRender = async () => {
     if (!selectedTemplate) {
       setError("Please select a template first.");
@@ -357,6 +375,13 @@ function App() {
           url: result.url || null
         });
         
+        // If we already have a URL, no need to check status
+        if (result.url && (result.status === 'completed' || result.status === 'COMPLETED')) {
+          console.log(`Render already completed with URL: ${result.url}`);
+          setLoadingRender(false);
+          return;
+        }
+        
         // Set up interval to check render status
         const intervalId = setInterval(async () => {
           try {
@@ -365,6 +390,7 @@ function App() {
             console.log("Render status check:", JSON.stringify(statusResult, null, 2));
             
             if (statusResult && statusResult.id) {
+              console.log(`Setting render result with status: ${statusResult.status}, URL: ${statusResult.url}`);
               setRenderResult(statusResult);
               
               // If render is complete or failed, clear the interval
@@ -463,7 +489,8 @@ function App() {
                 </div>
               </div>
               
-              {renderResult && (renderResult.status === 'completed' || renderResult.status === 'COMPLETED') && renderResult.url && (
+              {/* Show result immediately when render status is completed */}
+              {renderResult && renderResult.url && (
                 <ResultDisplay 
                   renderUrl={renderResult.url}
                   onReset={() => {

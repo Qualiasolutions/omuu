@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { fetchTemplates } from '../services/api';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 
 const TemplateSelector = ({ templates, selectedTemplate, onTemplateSelect, isLoading, error: externalError }) => {
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState('all');
   
   // Define available categories
@@ -31,7 +30,7 @@ const TemplateSelector = ({ templates, selectedTemplate, onTemplateSelect, isLoa
       
       {/* Category filter */}
       <div className="category-filter mb-4">
-        <div className="d-flex flex-wrap gap-2">
+        <div className="btn-group d-flex flex-wrap gap-2">
           {categories.map(category => (
             <button
               key={category.id}
@@ -64,18 +63,15 @@ const TemplateSelector = ({ templates, selectedTemplate, onTemplateSelect, isLoa
                   key={template.id}
                   className={`omu-template-card ${selectedTemplate?.id === template.id ? 'selected' : ''}`}
                   onClick={() => handleTemplateClick(template)}
+                  title={template.description || template.name}
                 >
                   {template.thumbnail && (
                     <div className="omu-template-card-image">
-                      <img 
-                        src={template.thumbnail} 
-                        alt={template.name}
-                      />
+                      <img src={template.thumbnail} alt={template.name} />
                     </div>
                   )}
                   <div className="omu-template-info">
-                    <p>{template.name}</p>
-                    <small>{template.description}</small>
+                    <p className="template-name">{template.name}</p>
                   </div>
                 </div>
               ))}
