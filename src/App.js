@@ -51,7 +51,7 @@ function App() {
   useEffect(() => {
     // Load Omu Media Kit logo
     const logo = new Image();
-    logo.src = process.env.PUBLIC_URL + '/images/omu-logo.png';
+    logo.src = process.env.PUBLIC_URL + '/images/Logo.png';
     logo.onload = () => setLogoLoaded(true);
     logo.onerror = () => {
       console.log("Logo load error, using fallback");
@@ -239,6 +239,7 @@ function App() {
     }
     
     try {
+      console.log("Starting render process");
       setLoadingRender(true);
       setError(null);
       setRenderResult(null);
@@ -250,12 +251,14 @@ function App() {
       }
       
       const layerData = prepareLayerData();
-      console.log("Prepared layer data:", layerData);
+      console.log("Prepared layer data:", JSON.stringify(layerData, null, 2));
       
+      console.log("Sending API request to create render");
       const result = await createRender(selectedTemplate.id, layerData);
-      console.log("Render result:", result);
+      console.log("Render result:", JSON.stringify(result, null, 2));
       
       if (result && result.id) {
+        console.log(`Render created with ID: ${result.id}`);
         // Set initial render result with pending status
         setRenderResult({
           id: result.id,
@@ -266,18 +269,21 @@ function App() {
         // Set up interval to check render status
         const intervalId = setInterval(async () => {
           try {
+            console.log(`Checking status for render ${result.id}`);
             const statusResult = await checkRenderStatus(result.id);
-            console.log("Render status check:", statusResult);
+            console.log("Render status check:", JSON.stringify(statusResult, null, 2));
             
             if (statusResult && statusResult.id) {
               setRenderResult(statusResult);
               
               // If render is complete or failed, clear the interval
               if (statusResult.status === 'completed' || statusResult.status === 'failed') {
+                console.log(`Render ${statusResult.status}: ${statusResult.url || 'No URL'}`);
                 clearInterval(intervalId);
                 setRenderStatusInterval(null);
               }
             } else {
+              console.error("Invalid status response", statusResult);
               throw new Error("Invalid status response");
             }
           } catch (err) {
@@ -290,11 +296,12 @@ function App() {
         
         setRenderStatusInterval(intervalId);
       } else {
+        console.error("Invalid render result", result);
         setError("Failed to create render. Invalid response from API.");
       }
     } catch (err) {
       console.error("Error creating render:", err);
-      setError("Failed to create render. " + err.message);
+      setError("Failed to create render. " + (err.message || "Unknown error"));
     } finally {
       setLoadingRender(false);
     }
@@ -305,7 +312,7 @@ function App() {
       <header className="omu-header">
         <div className="omu-logo">
           <img 
-            src={process.env.PUBLIC_URL + '/images/omu-logo.png'} 
+            src={process.env.PUBLIC_URL + '/images/Logo.png'} 
             alt="OMU Media Kit Logo" 
             onError={(e) => {
               e.target.onerror = null;
