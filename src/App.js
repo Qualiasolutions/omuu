@@ -417,9 +417,9 @@ function App() {
       />
       
       <main className="App-main">
-        <div className="container">
-          <div className="row">
-            <div className="col col-md-12">
+        <div className="container-fluid px-2 px-md-4">
+          <div className="row mb-3">
+            <div className="col-12">
               <FolderSelector 
                 onFolderSelect={handleFolderSelect}
                 selectedFolderId={selectedFolderId}
@@ -428,20 +428,23 @@ function App() {
           </div>
           
           <div className="row">
-            <div className="col col-md-8">
+            <div className="col-lg-8 col-md-7 mb-4">
               {error && <ErrorMessage message={error} onClose={() => setError(null)} />}
               
-              <div className="card">
+              <div className="card mb-4">
                 <div className="card-body">
                   <TemplateSelector 
                     templates={templates}
                     selectedTemplate={selectedTemplate}
-                    onTemplateSelect={setSelectedTemplate}
+                    onTemplateSelect={handleSelectTemplate}
                     isLoading={loadingTemplates}
-                    templateLayers={templateDetails?.layers || {}}
-                    isLoadingLayers={loadingTemplates}
+                    error={error}
                   />
-                
+                </div>
+              </div>
+              
+              <div className="card mb-4">
+                <div className="card-body">
                   <ContentForm 
                     businessType={formData.businessType || "coffee-shop"}
                     contentType={formData.contentType || "casual"}
@@ -465,32 +468,35 @@ function App() {
                   renderUrl={renderResult.url}
                   onReset={() => {
                     setRenderResult(null);
-                    // Optionally reset other state if needed
                   }}
                 />
               )}
             </div>
             
-            <div className="col col-md-4">
+            <div className="col-lg-4 col-md-5">
               {assetLibraryVisible && (
-                <AssetLibrary 
-                  onAssetSelect={setSelectedAsset}
-                  selectedAsset={selectedAsset}
-                />
+                <div className="card mb-4">
+                  <AssetLibrary 
+                    onAssetSelect={setSelectedAsset}
+                    selectedAsset={selectedAsset}
+                  />
+                </div>
               )}
               
               {renderHistoryVisible && (
-                <RenderHistory 
-                  onRenderSelect={setSelectedRender}
-                  selectedRender={selectedRender}
-                />
+                <div className="card">
+                  <RenderHistory 
+                    onRenderSelect={setSelectedRender}
+                    selectedRender={selectedRender}
+                  />
+                </div>
               )}
             </div>
           </div>
         </div>
       </main>
       
-      <footer className="omu-footer">
+      <footer className="omu-footer mt-4">
         <p>&copy; {new Date().getFullYear()} Qualia Solutions - OMU Media Kit</p>
       </footer>
     </div>

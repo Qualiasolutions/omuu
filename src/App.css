@@ -32,9 +32,15 @@ body {
 
 /* Container & Layout */
 .omu-container {
-  max-width: var(--content-width);
-  margin: 0 auto;
-  padding: 20px;
+  max-width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.App-main {
+  flex: 1;
+  padding: 20px 0;
 }
 
 .container {
@@ -67,11 +73,12 @@ body {
 
 /* Header */
 .omu-header {
+  padding: 15px 20px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
   display: flex;
   align-items: center;
-  padding: 24px 0;
-  margin-bottom: 30px;
-  border-bottom: 1px solid var(--border);
+  gap: 15px;
 }
 
 .omu-logo {
@@ -81,41 +88,32 @@ body {
 }
 
 .omu-logo img {
-  width: 50px;
   height: 50px;
-  object-fit: contain;
-  border-radius: 10px;
+  max-width: 100%;
 }
 
 .omu-header h1 {
-  font-size: 28px;
-  font-weight: 700;
   margin: 0;
-  color: var(--primary);
+  font-size: 1.5rem;
+  font-weight: 600;
 }
 
 .omu-subtitle {
+  font-size: 0.875rem;
+  color: #6c757d;
   margin-left: auto;
-  font-size: 14px;
-  color: var(--text-light);
 }
 
 /* Cards & Containers */
 .card {
-  background: var(--card-bg);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
-  margin-bottom: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  margin-bottom: 1.5rem;
   overflow: hidden;
-  transition: var(--transition);
-}
-
-.card:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .card-body {
-  padding: 24px;
+  padding: 1.25rem;
 }
 
 /* Template Selector */
@@ -133,22 +131,24 @@ body {
 
 .omu-templates-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
 }
 
 .omu-template-card {
-  border-radius: var(--border-radius);
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
   overflow: hidden;
+  transition: all 0.2s ease;
   cursor: pointer;
-  border: 2px solid transparent;
-  transition: var(--transition);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .omu-template-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 .omu-template-card.selected {
@@ -310,19 +310,18 @@ body {
 
 /* Form Components */
 .omu-form {
-  padding: 16px 0;
+  margin-top: 1rem;
 }
 
 .omu-form-group {
-  margin-bottom: 24px;
+  margin-bottom: 1.25rem;
 }
 
 .omu-form-group label {
-  display: block;
-  font-weight: 600;
-  font-size: 16px;
-  margin-bottom: 8px;
-  color: var(--text);
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
 }
 
 .omu-select, .omu-textarea {
@@ -366,49 +365,29 @@ body {
 
 /* Generate Button */
 .omu-generate-button {
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  border-radius: var(--border-radius);
-  padding: 16px 32px;
-  font-size: 18px;
+  width: 100%;
+  padding: 12px 24px;
+  font-size: 1rem;
   font-weight: 600;
+  color: white;
+  background-color: #4a8cff;
+  border: none;
+  border-radius: 6px;
   cursor: pointer;
-  transition: var(--transition);
+  transition: background-color 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 20px auto;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 400px;
+  gap: 8px;
 }
 
 .omu-generate-button:hover:not(:disabled) {
-  background-color: var(--primary-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+  background-color: #3a7ae8;
 }
 
 .omu-generate-button:disabled {
-  background-color: var(--text-light);
+  background-color: #a0a0a0;
   cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.omu-button-spinner {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  margin-right: 10px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: #fff;
-  animation: spin 1s ease-in-out infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }
 
 /* Result Display */
@@ -579,12 +558,12 @@ body {
 
 /* Footer Styles */
 .omu-footer {
-  margin-top: 60px;
-  padding: 30px 0;
+  padding: 15px 20px;
+  background-color: #f8f9fa;
+  border-top: 1px solid #e9ecef;
   text-align: center;
-  color: var(--text-light);
-  font-size: 14px;
-  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+  color: #6c757d;
 }
 
 /* Responsive design */
@@ -610,13 +589,11 @@ body {
   }
   
   .omu-header h1 {
-    font-size: 24px;
-    margin: 10px 0;
+    font-size: 1.25rem;
   }
   
   .omu-subtitle {
-    margin-left: 0;
-    margin-top: 4px;
+    display: none;
   }
   
   .omu-logo {
@@ -629,8 +606,7 @@ body {
   }
   
   .omu-templates-grid {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   }
   
   .omu-form-group {
@@ -657,6 +633,26 @@ body {
   
   .card-body {
     padding: 16px;
+  }
+}
+
+@media (max-width: 576px) {
+  .omu-templates-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+  
+  .template-card h3 {
+    font-size: 0.8rem;
+  }
+  
+  .template-card p {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .omu-templates-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
