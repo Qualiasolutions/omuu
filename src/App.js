@@ -168,31 +168,132 @@ function App() {
 
     const preparedLayers = {};
     
+    // Apply business and content type to inform our layer customization
+    const businessType = formData.businessType || 'coffee-shop';
+    const contentType = formData.contentType || 'casual';
+    const customText = formData.customText || '';
+    
+    // Create a mapping of descriptive business type colors
+    const businessTypeColors = {
+      'coffee-shop': { main: brandGuidelines.colors.primary, accent: '#6F4E37' },
+      'salon': { main: '#D8BFD8', accent: '#FF69B4' },
+      'gym': { main: '#1E90FF', accent: '#32CD32' },
+      'restaurant': { main: '#FF6347', accent: '#FFA07A' },
+      'clothing-store': { main: '#4B0082', accent: '#DA70D6' }
+    };
+    
+    // Set content style based on selected voice/content type
+    const contentStyle = {
+      'casual': { 
+        fontSize: '16px', 
+        fontWeight: 'normal',
+        letterSpacing: '0px'
+      },
+      'energetic': { 
+        fontSize: '18px', 
+        fontWeight: 'bold',
+        letterSpacing: '1px',
+        transform: 'uppercase'
+      },
+      'professional': { 
+        fontSize: '16px', 
+        fontWeight: '500',
+        letterSpacing: '0.5px'
+      },
+      'friendly': { 
+        fontSize: '17px', 
+        fontWeight: 'normal',
+        letterSpacing: '0px',
+        fontStyle: 'italic'
+      }
+    };
+
+    // Select colors based on business type, falling back to brand guidelines
+    const mainColor = businessTypeColors[businessType]?.main || brandGuidelines.colors.primary;
+    const accentColor = businessTypeColors[businessType]?.accent || brandGuidelines.colors.accent;
+    
     Object.keys(templateDetails.layers).forEach(layerName => {
       const layer = templateDetails.layers[layerName];
       
       if (layer.type === 'text') {
+        // Start with the base text value, either from form or layer default
+        let textValue = formData[layerName] || layer.text || '';
+        
+        // Apply custom text to main content areas if provided
+        if (customText && 
+           (layerName.includes('content') || 
+            layerName.includes('description') || 
+            layerName.includes('main-text'))) {
+          textValue = customText;
+        }
+        
+        // Base text layer configuration
         preparedLayers[layerName] = {
-          text: formData[layerName] || layer.text || ''
+          text: textValue
         };
         
-        // Apply brand guidelines to text layers
-        if (brandGuidelines) {
-          // Apply different styling based on the layer name or content
-          if (layerName.includes('title') || layerName.includes('heading')) {
-            preparedLayers[layerName].font = brandGuidelines.typography.headingFont;
-            preparedLayers[layerName].color = brandGuidelines.colors.primary;
-            preparedLayers[layerName].font_weight = brandGuidelines.typography.headingWeight;
-          } else if (layerName.includes('button') || layerName.includes('cta')) {
-            preparedLayers[layerName].color = brandGuidelines.colors.accent;
-            preparedLayers[layerName].font_weight = 'bold';
-          } else {
-            preparedLayers[layerName].font = brandGuidelines.typography.bodyFont;
-            preparedLayers[layerName].color = brandGuidelines.colors.text;
-            preparedLayers[layerName].font_weight = brandGuidelines.typography.bodyWeight;
+        // Apply appropriate styling based on layer name
+        if (layerName.includes('title') || layerName.includes('heading') || layerName.includes('header')) {
+          preparedLayers[layerName] = {
+            ...preparedLayers[layerName],
+            font: brandGuidelines.typography.headingFont,
+            color: brandGuidelines.colors.primary,
+            font_weight: brandGuidelines.typography.headingWeight,
+            font_size: contentStyle[contentType]?.fontSize || '18px'
+          };
+        } else if (layerName.includes('button') || layerName.includes('cta')) {
+          preparedLayers[layerName] = {
+            ...preparedLayers[layerName],
+            color: '#FFFFFF',  // White text for buttons
+            background_color: brandGuidelines.colors.accent,
+            font_weight: 'bold',
+            font_size: '16px',
+            padding: '8px 16px',
+            border_radius: '4px'
+          };
+        } else if (layerName.includes('price') || layerName.includes('value') || layerName.includes('offer')) {
+          preparedLayers[layerName] = {
+            ...preparedLayers[layerName],
+            color: accentColor,
+            font_weight: 'bold',
+            font_size: '22px'
+          };
+        } else if (layerName.includes('subtitle') || layerName.includes('subheading')) {
+          preparedLayers[layerName] = {
+            ...preparedLayers[layerName],
+            font: brandGuidelines.typography.headingFont,
+            color: brandGuidelines.colors.secondary,
+            font_weight: '500',
+            font_size: '16px'
+          };
+        } else {
+          // Default text styling for body text
+          preparedLayers[layerName] = {
+            ...preparedLayers[layerName],
+            font: brandGuidelines.typography.bodyFont,
+            color: brandGuidelines.colors.text,
+            font_weight: brandGuidelines.typography.bodyWeight,
+            font_size: contentStyle[contentType]?.fontSize || '16px'
+          };
+          
+          // Apply content-type specific transformations
+          if (contentType === 'energetic' && !layerName.includes('small')) {
+            preparedLayers[layerName].text = preparedLayers[layerName].text.toUpperCase();
+          }
+          
+          if (contentType === 'friendly' && !layerName.includes('label')) {
+            preparedLayers[layerName].font_style = 'italic';
           }
         }
+        
+        // Apply voice style from brand guidelines
+        if (brandGuidelines.voice === 'luxurious') {
+          preparedLayers[layerName].letter_spacing = '1px';
+          preparedLayers[layerName].font = preparedLayers[layerName].font.includes('serif') ? 
+            preparedLayers[layerName].font : "'Times New Roman', serif";
+        }
       } else if (layer.type === 'image') {
+        // Handle image layers
         if (formData[layerName]) {
           preparedLayers[layerName] = {
             image: formData[layerName]
@@ -200,35 +301,50 @@ function App() {
         }
         
         // Use logo from brand guidelines for logo layers
-        if (layerName.includes('logo') && brandGuidelines.logo) {
+        if ((layerName.includes('logo') || layerName.includes('brand')) && brandGuidelines.logo) {
           preparedLayers[layerName] = {
             image: brandGuidelines.logo
           };
         }
       } else if (layer.type === 'shape') {
-        // Apply brand colors to shape layers
-        if (brandGuidelines) {
-          if (layerName.includes('primary') || layerName.includes('main')) {
-            preparedLayers[layerName] = {
-              color: brandGuidelines.colors.primary
-            };
-          } else if (layerName.includes('secondary')) {
-            preparedLayers[layerName] = {
-              color: brandGuidelines.colors.secondary
-            };
-          } else if (layerName.includes('accent')) {
-            preparedLayers[layerName] = {
-              color: brandGuidelines.colors.accent
-            };
-          } else if (layerName.includes('background')) {
-            preparedLayers[layerName] = {
-              color: brandGuidelines.colors.background
-            };
-          }
+        // Apply brand colors to shape layers based on their name/function
+        if (layerName.includes('primary') || layerName.includes('main') || layerName.includes('base')) {
+          preparedLayers[layerName] = {
+            color: mainColor
+          };
+        } else if (layerName.includes('secondary') || layerName.includes('alt')) {
+          preparedLayers[layerName] = {
+            color: brandGuidelines.colors.secondary
+          };
+        } else if (layerName.includes('accent') || layerName.includes('highlight')) {
+          preparedLayers[layerName] = {
+            color: accentColor
+          };
+        } else if (layerName.includes('background') || layerName.includes('bg')) {
+          preparedLayers[layerName] = {
+            color: brandGuidelines.colors.background
+          };
+        } else if (layerName.includes('border') || layerName.includes('divider')) {
+          preparedLayers[layerName] = {
+            color: brandGuidelines.colors.text + '33' // Add transparency to text color
+          };
+        } else {
+          // For any other shape, use a color from the brand palette
+          const colorIndex = Object.keys(templateDetails.layers).indexOf(layerName) % 3;
+          const colors = [
+            brandGuidelines.colors.primary,
+            brandGuidelines.colors.secondary,
+            brandGuidelines.colors.accent
+          ];
+          
+          preparedLayers[layerName] = {
+            color: colors[colorIndex]
+          };
         }
       }
     });
     
+    console.log("Final layer data with brand guidelines applied:", preparedLayers);
     return preparedLayers;
   };
 

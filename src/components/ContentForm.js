@@ -24,6 +24,20 @@ const ContentForm = ({
 
   return (
     <div className="omu-generator">
+      <div className="omu-instructions card">
+        <div className="card-body">
+          <h3>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12" y2="8"></line>
+            </svg>
+            How It Works
+          </h3>
+          <p>Your brand guidelines will be automatically applied to the template design when you click Generate. The selected business type and content style will influence the colors and typography in your Instagram post.</p>
+        </div>
+      </div>
+      
       <form className="omu-form" onSubmit={handleSubmit}>
         <div className="omu-form-group">
           <label htmlFor="business-type">
@@ -45,6 +59,7 @@ const ContentForm = ({
             <option value="restaurant">Restaurant</option>
             <option value="clothing-store">Clothing Store</option>
           </select>
+          <div className="omu-hint">This will influence the color scheme of your Instagram post</div>
         </div>
 
         <div className="omu-form-group">
@@ -66,6 +81,7 @@ const ContentForm = ({
             <option value="professional">Professional</option>
             <option value="friendly">Friendly</option>
           </select>
+          <div className="omu-hint">This will affect the typography and text styling</div>
         </div>
 
         <div className="omu-form-group">
